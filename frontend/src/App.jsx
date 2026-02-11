@@ -20,28 +20,19 @@ function App() {
   const [goal, setGoal] = useState("")
   const [duration, setDuration] = useState("")
   const [contributeAmount, setContributeAmount] = useState({})
-  
-  async function refreshBalances(provider, account, tokenContract) {
-    const wei = await provider.getBalance(account)
-    setEthBalance(ethers.formatEther(wei))
-    
-    const tokenWei = await tokenContract.balanceOf(account)
-    setTokenBalance(ethers.formatUnits(tokenWei, 18))
-  }
 
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-        const address = await signer.getAddress()
+        const browserProvider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await browserProvider.getSigner()
+        const userAddress = await signer.getAddress()
         
         const crowdfunding = new ethers.Contract(CROWDFUNDING_ADDRESS, CrowdfundingABI.abi, signer)
         const token = new ethers.Contract(TOKEN_ADDRESS, RewardTokenABI.abi, signer)
-        await refreshBalances(provider, address, token)
 
-        setAccount(address)
-        setProvider(provider)
+        setAccount(userAddress)
+        setProvider(browserProvider)
         setContract(crowdfunding)
         setTokenContract(token)
       } catch (error) {
@@ -52,16 +43,22 @@ function App() {
     }
   }
 
+  const fetchEthBalance = async () => {
+    if (!provider || !account) return
+    const bal = await provider.getBalance(account)
+    setEthBalance(ethers.formatEther(bal))
+  }
+
   const fetchCampaigns = async () => {
     if (!contract) return
     try {
-      const count = await contract.campaignCount()
+      const count = Number(await contract.campaignCount())
       const loadedCampaigns = []
       for (let i = 0; i < count; i++) {
         const c = await contract.campaigns(i)
         loadedCampaigns.push({
           id: i,
-          title: JSON.parse(localStorage.getItem("campaignTitles") ?? "{}")[c.titleHash] ?? `#{i}`,
+          title: JSON.parse(localStorage.getItem("campaignTitles") ?? "{}")[c.titleHash] ?? `#${i}`,
           creator: c.creator,
           goal: ethers.formatEther(c.goalWei),
           raised: ethers.formatEther(c.totalRaised),
@@ -87,11 +84,10 @@ function App() {
   }
 
   useEffect(() => {
-    if (contract) {
-      fetchCampaigns()
-      fetchBalance()
-    }
-  }, [contract, account])
+    if (contract) fetchCampaigns()
+    if (tokenContract && account) fetchBalance()
+    if (provider && account) fetchEthBalance()
+  }, [contract, tokenContract, provider, account])
 
   const createCampaign = async () => {
     if (!contract) return
@@ -100,9 +96,8 @@ function App() {
       const goalWei = ethers.parseEther(goal)
       const tx = await contract.createCampaign(title, goalWei, duration)
       await tx.wait()
-      await refreshBalances(provider, address, token)
   
-      const count = await contract.campaignCount()
+      const count = Number(await contract.campaignCount())
       const lastIndex = Number(count) - 1
       const created = await contract.campaigns(lastIndex)
   
@@ -132,7 +127,6 @@ function App() {
       if (!amount) return
       const tx = await contract.contribute(id, { value: ethers.parseEther(amount) })
       await tx.wait()
-      await refreshBalances(provider, address, token)
       alert("Contribution successful! Rewards minted.")
       fetchCampaigns()
       fetchBalance()
@@ -147,7 +141,6 @@ function App() {
     try {
       const tx = await contract.finalize(id)
       await tx.wait()
-      await refreshBalances(provider, address, token)
       alert("Campaign Finalized")
       fetchCampaigns()
     } catch (error) {
@@ -161,7 +154,6 @@ function App() {
     try {
       const tx = await contract.withdraw(id)
       await tx.wait()
-      await refreshBalances(provider, address, token)
       alert("Funds Withdrawn")
       fetchCampaigns()
     } catch (error) {
