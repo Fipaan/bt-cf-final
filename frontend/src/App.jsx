@@ -4,8 +4,8 @@ import CrowdfundingABI from './Crowdfunding.json'
 import RewardTokenABI from './RewardToken.json'
 import './App.css'
 
-const CROWDFUNDING_ADDRESS = "REPLACE_ON_DEPLOY"
-const TOKEN_ADDRESS = "REPLACE_ON_DEPLOY"
+const CROWDFUNDING_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+const TOKEN_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 
 function App() {
   const [account, setAccount] = useState("")
@@ -212,7 +212,7 @@ function App() {
                       <button className="secondary-btn" onClick={() => finalize(c.id)}>Finalize (End)</button>
                     </div>
                   ) : (
-                    c.successful && c.creator.toLowerCase() === account.toLowerCase() && (
+                    c.successful && c.creator.toLowerCase() === account.toLowerCase() && c.raised > 0.0 && (
                       <button onClick={() => withdraw(c.id)}>Withdraw Funds</button>
                     )
                   )}
