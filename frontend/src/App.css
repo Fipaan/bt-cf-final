@@ -5,6 +5,14 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
+#headerContainer {
+  display: flex;
+  flex-direction: column;
+}
+#headerContainer h1 {
+    margin-bottom: 22px;
+}
+
 .container {
   width: 100%;
 }

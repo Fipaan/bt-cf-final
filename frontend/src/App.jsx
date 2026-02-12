@@ -164,10 +164,10 @@ function App() {
 
   return (
     <div className="container">
-      <header>
+      <header id="headerContainer">
         <h1>Blockchain Crowdfunding</h1>
         {!account ? (
-          <button onClick={connectWallet} className="connect-btn">Connect MetaMask</button>
+          <button id="connectWallet" onClick={connectWallet} className="connect-btn">Connect MetaMask</button>
         ) : (
           <div className="wallet-info">
             <p>Wallet: {account.substring(0, 6)}...{account.substring(38)}</p>
